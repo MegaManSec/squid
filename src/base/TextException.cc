@@ -53,7 +53,7 @@ TextException::what() const throw()
     if (!WhatStrings_)
         WhatStrings_ = new WhatStrings;
     // *this could change, but we must preserve old results for they may be used
-    auto it = WhatStrings_->emplace(this, std::move(value));
+    auto it = WhatStrings_->emplace(this, std::move(result));
 
     return it->second.what();
 }
