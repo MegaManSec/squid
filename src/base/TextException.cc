@@ -47,15 +47,15 @@ TextException::what() const throw()
 {
     std::ostringstream os;
     print(os);
-    const WhatString result(os.str());
+    WhatString result(os.str());
 
     // extend result.c_str() lifetime to this object lifetime
     if (!WhatStrings_)
         WhatStrings_ = new WhatStrings;
     // *this could change, but we must preserve old results for they may be used
-    WhatStrings_->emplace(std::make_pair(this, result));
+    auto it = WhatStrings_->emplace(this, std::move(value));
 
-    return result.what();
+    return it->second.what();
 }
 
 std::ostream &
