@@ -57,13 +57,14 @@ rfc1738_do_escape(const char *url, int flags)
 {
     static char *buf;
     static size_t bufsize = 0;
+    auto url_len = strlen(url);
     const char *src;
     char *dst;
     unsigned int i, do_escape;
 
-    if (buf == NULL || strlen(url) * 3 > bufsize) {
+    if (buf == NULL || url_len * 3 > bufsize) {
         xfree(buf);
-        bufsize = strlen(url) * 3 + 1;
+        bufsize = url_len * 3 + 1;
         buf = (char*)xcalloc(bufsize, 1);
     }
     for (src = url, dst = buf; *src != '\0' && dst < (buf + bufsize - 1); src++, dst++) {
