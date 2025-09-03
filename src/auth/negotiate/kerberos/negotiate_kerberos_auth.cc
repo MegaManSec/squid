@@ -649,7 +649,6 @@ main(int argc, char *const argv[])
             xfree(memory_keytab_name);
             xfree(memory_keytab_name_env);
 #endif
-            xfree(rfc_user);
             fprintf(stdout, "BH quit command\n");
             exit(EXIT_SUCCESS);
         }
