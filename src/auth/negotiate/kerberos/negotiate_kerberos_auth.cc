@@ -193,21 +193,22 @@ check_gss_err(OM_uint32 major_status, OM_uint32 minor_status,
 krb5_error_code krb5_free_kt_list(krb5_context context, krb5_kt_list list)
 {
     krb5_kt_list lp = list;
+    krb5_error_code last = 0;
 
     while (lp) {
-#if HAVE_LIBHEIMDAL_KRB5 || ( HAVE_KRB5_KT_FREE_ENTRY && HAVE_DECL_KRB5_KT_FREE_ENTRY )
-        krb5_error_code  retval = krb5_kt_free_entry(context, lp->entry);
-#else
-        krb5_error_code  retval = krb5_free_keytab_entry_contents(context, lp->entry);
-#endif
-        safe_free(lp->entry);
-        if (check_k5_err(context, "krb5_kt_free_entry", retval))
-            return retval;
         krb5_kt_list prev = lp;
+#if HAVE_LIBHEIMDAL_KRB5 || ( HAVE_KRB5_KT_FREE_ENTRY && HAVE_DECL_KRB5_KT_FREE_ENTRY )
+        krb5_error_code  retval = krb5_kt_free_entry(context, prev->entry);
+#else
+        krb5_error_code  retval = krb5_free_keytab_entry_contents(context, prev->entry);
+#endif
+        safe_free(prev->entry);
+        if (retval && !last)
+            last = retval;
         lp = lp->next;
         xfree(prev);
     }
-    return 0;
+    return last;
 }
 /*
  * Read in a keytab and append it to list.  If list starts as NULL,
@@ -310,9 +311,8 @@ krb5_error_code krb5_write_keytab(krb5_context context, krb5_kt_list list, char 
         if (retval)
             break;
     }
-    /*
-     *     krb5_kt_close(context, kt);
-     */
+
+    krb5_kt_close(context, memory_keytab);
     return retval;
 }
 #endif /* HAVE_KRB5_MEMORY_KEYTAB */
@@ -618,9 +618,13 @@ main(int argc, char *const argv[])
             continue;
         }
         if (!strncmp(buf, "QQ", 2)) {
-            gss_release_buffer(&minor_status, &input_token);
+            xfree(input_token.value); // allocated with xmalloc
+            input_token.value = NULL;
+            input_token.length = 0;
             gss_release_buffer(&minor_status, &output_token);
-            gss_release_buffer(&minor_status, &service);
+            safe_free(service.value); // allocated with xmalloc
+            service.value = NULL;
+            service.length = 0;
             gss_release_cred(&minor_status, &server_creds);
             if (server_name)
                 gss_release_name(&minor_status, &server_name);
@@ -645,7 +649,6 @@ main(int argc, char *const argv[])
             xfree(keytab_name);
             xfree(keytab_name_env);
 #if HAVE_KRB5_MEMORY_KEYTAB
-            krb5_kt_close(context, memory_keytab);
             xfree(memory_keytab_name);
             xfree(memory_keytab_name_env);
 #endif
@@ -679,6 +682,9 @@ main(int argc, char *const argv[])
         size_t dstLen = 0;
         if (!base64_decode_update(&ctx, &dstLen, static_cast<uint8_t*>(input_token.value), srcLen, b64Token) ||
                 !base64_decode_final(&ctx)) {
+            safe_free(input_token.value);
+            input_token.value = nullptr;
+            input_token.length = 0;
             debug((char *) "%s| %s: ERROR: Invalid base64 token [%s]\n", LogTime(), PROGRAM, b64Token);
             fprintf(stdout, "BH Invalid negotiate request token\n");
             continue;
@@ -854,7 +860,9 @@ main(int argc, char *const argv[])
                         PROGRAM, rfc_user);
         }
 cleanup:
-        gss_release_buffer(&minor_status, &input_token);
+        safe_free(input_token.value);
+        input_token.value = NULL;
+        input_token.length = 0;
         gss_release_buffer(&minor_status, &output_token);
         gss_release_cred(&minor_status, &server_creds);
         if (server_name)

@@ -555,7 +555,9 @@ char *peer_proxy_negotiate_auth(char *principal_name, const char * const proxy, 
 
 cleanup:
     gss_delete_sec_context(&minor_status, &gss_context, nullptr);
-    gss_release_buffer(&minor_status, &service);
+    xfree(service.value); // allocated with xmalloc
+    service.value = NULL;
+    service.length = 0;
     gss_release_buffer(&minor_status, &input_token);
     gss_release_buffer(&minor_status, &output_token);
     gss_release_name(&minor_status, &server_name);
