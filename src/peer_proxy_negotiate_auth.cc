@@ -172,6 +172,22 @@ void krb5_cleanup() {
         if (kparam.cc)
             krb5_cc_destroy(kparam.context, kparam.cc);
         kparam.cc = nullptr;
+        if (principal) {
+            krb5_free_principal(kparam.context, principal);
+            principal = nullptr;
+        }
+        if (principal_name) {
+            xfree(principal_name);
+            principal_name = nullptr;
+        }
+        if (keytab_filename) {
+            xfree(keytab_filename);
+            keytab_filename = nullptr;
+        }
+        if (creds) {
+            krb5_free_creds(kparam.context, creds);
+            creds = nullptr;
+        }
         krb5_free_context(kparam.context);
         kparam.context = nullptr;
     }
@@ -331,8 +347,13 @@ restart:
             debugs(11, 5,
                    "Error while resolving keytab filename " <<
                    keytab_filename << " : " << error_message(code));
+            xfree(keytab_filename);
+            keytab_filename = nullptr;
             return (1);
         }
+
+        xfree(keytab_filename);
+        keytab_filename = nullptr;
 
         if (!pn) {
             code = krb5_kt_start_seq_get(kparam.context, keytab, &cursor);
@@ -344,7 +365,13 @@ restart:
             }
             code =
                 krb5_kt_next_entry(kparam.context, keytab, &entry, &cursor);
-            krb5_copy_principal(kparam.context, entry.principal,
+            if (code) {
+               debugs(11, 5,
+                       "Error while starting keytab scan : " <<
+                       error_message(code));
+                return (1);
+            }
+            code = krb5_copy_principal(kparam.context, entry.principal,
                                 &principal);
             if (code && code != KRB5_KT_END) {
                 debugs(11, 5,
@@ -365,6 +392,7 @@ restart:
 #else
             code = krb5_free_keytab_entry_contents(kparam.context, &entry);
 #endif
+            krb5_kt_close(kparam.context, keytab);
             if (code) {
                 debugs(11, 5,
                        "Error while freeing keytab entry : " <<
@@ -373,9 +401,11 @@ restart:
             }
 
         } else {
+            if (principal_name)
+                xfree(principal_name);
             principal_name = xstrdup(pn);
+            krb5_kt_close(kparam.context, keytab);
         }
-
         if (!principal) {
             code =
                 krb5_parse_name(kparam.context, principal_name, &principal);
@@ -387,6 +417,10 @@ restart:
             }
         }
 
+        if (creds) {
+            krb5_free_creds(kparam.context, creds);
+            creds = nullptr;
+        }
         creds = (krb5_creds *) xmalloc(sizeof(*creds));
         memset(creds, 0, sizeof(*creds));
 #if HAVE_KRB5_GET_INIT_CREDS_OPT_ALLOC
