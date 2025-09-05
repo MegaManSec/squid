@@ -1107,7 +1107,6 @@ wccp2ConnectionClose(void)
     wccp2_service_list_head = nullptr;
     eventDelete(wccp2HereIam, nullptr);
     eventDelete(wccp2AssignBuckets, nullptr);
-    eventDelete(wccp2HereIam, nullptr);
     wccp2_connected = 0;
 }
 
