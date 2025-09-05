@@ -1835,7 +1835,7 @@ wccp2AssignBuckets(void *)
         saved_offset = offset;
 
         for (router_list_ptr = &service_list_ptr->router_list_head; router_list_ptr->next != nullptr; router_list_ptr = router_list_ptr->next) {
-            unsigned long *weight = (unsigned long *)xcalloc(sizeof(*weight), ntohl(router_list_ptr->num_caches));
+            unsigned long *weight = (unsigned long *)xcalloc(ntohl(router_list_ptr->num_caches), sizeof(*weight));
             unsigned long total_weight = 0;
             int num_caches = ntohl(router_list_ptr->num_caches);
 
@@ -1875,7 +1875,7 @@ wccp2AssignBuckets(void *)
                             buckets[bucket_counter] = (char) (bucket_counter % num_caches);
                         }
                     } else {
-                        unsigned long *assigned = (unsigned long *)xcalloc(sizeof(*assigned), num_caches);
+                        unsigned long *assigned = (unsigned long *)xcalloc(num_caches, sizeof(*assigned));
                         unsigned long done = 0;
                         int cache = -1;
                         unsigned long per_bucket = total_weight / WCCP_BUCKETS;
