@@ -230,15 +230,15 @@ acl_ip_data::containsVetted(const Ip::Address &needle) const
 }
 
 /* Handle either type of address, IPv6 will be discarded with a warning if disabled */
-#define SCAN_ACL1_6       "%[0123456789ABCDEFabcdef:]-%[0123456789ABCDEFabcdef:]/%[0123456789]"
-#define SCAN_ACL2_6       "%[0123456789ABCDEFabcdef:]-%[0123456789ABCDEFabcdef:]%c"
-#define SCAN_ACL3_6       "%[0123456789ABCDEFabcdef:]/%[0123456789]"
-#define SCAN_ACL4_6       "%[0123456789ABCDEFabcdef:]/%c"
+#define SCAN_ACL1_6       "%255[0123456789ABCDEFabcdef:]-%[0123456789ABCDEFabcdef:]/%[0123456789]"
+#define SCAN_ACL2_6       "%255[0123456789ABCDEFabcdef:]-%[0123456789ABCDEFabcdef:]%c"
+#define SCAN_ACL3_6       "%255[0123456789ABCDEFabcdef:]/%[0123456789]"
+#define SCAN_ACL4_6       "%255[0123456789ABCDEFabcdef:]/%c"
 /* We DO need to know which is which though, for proper CIDR masking. */
-#define SCAN_ACL1_4       "%[0123456789.]-%[0123456789.]/%[0123456789.]"
-#define SCAN_ACL2_4       "%[0123456789.]-%[0123456789.]%c"
-#define SCAN_ACL3_4       "%[0123456789.]/%[0123456789.]"
-#define SCAN_ACL4_4       "%[0123456789.]/%c"
+#define SCAN_ACL1_4       "%255[0123456789.]-%255[0123456789.]/%255[0123456789.]"
+#define SCAN_ACL2_4       "%255[0123456789.]-%255[0123456789.]%c"
+#define SCAN_ACL3_4       "%255[0123456789.]/%255[0123456789.]"
+#define SCAN_ACL4_4       "%255[0123456789.]/%c"
 
 acl_ip_data *
 acl_ip_data::FactoryParse(const char *t)
@@ -292,7 +292,7 @@ acl_ip_data::FactoryParse(const char *t)
         iptype=AF_INET6;
 
 // Neither
-    } else if (sscanf(t, "%[^/]/%s", addr1, mask) == 2) {
+    } else if (sscanf(t, "%255[^/]/%255s", addr1, mask) == 2) {
         debugs(28, 9, "aclIpParseIpData: '" << t << "' matched: non-IP pattern: %[^/]/%s");
         addr2[0] = '\0';
     } else if (sscanf(t, "%s", addr1) == 1) {
