@@ -2486,7 +2486,7 @@ dump_wccp2_service_info(StoreEntry * e, const char *label, void *)
             }
 
             if (flags & WCCP2_SERVICE_DST_IP_ALT_HASH) {
-                storeAppendPrintf(e, "%ssrc_ip_alt_hash", comma ? "," : "");
+                storeAppendPrintf(e, "%sdst_ip_alt_hash", comma ? "," : "");
                 comma = true;
             }
 
