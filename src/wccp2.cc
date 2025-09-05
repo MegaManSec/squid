@@ -1611,8 +1611,6 @@ wccp2HereIam(void *)
         return;
     }
 
-    router.port(WCCP_PORT);
-
     /* for each router on each service send a packet */
     service_list_ptr = wccp2_service_list_head;
 
@@ -1621,6 +1619,7 @@ wccp2HereIam(void *)
 
         for (router_list_ptr = &service_list_ptr->router_list_head; router_list_ptr->next != nullptr; router_list_ptr = router_list_ptr->next) {
             router = router_list_ptr->router_sendto_address;
+            router.port(WCCP_PORT);
 
             /* Set the cache id (ip) */
 
