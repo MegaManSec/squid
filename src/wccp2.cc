@@ -1227,7 +1227,7 @@ wccp2HandleUdp(int sock, void *)
     Ip::Address from_tmp;
     from_tmp.setIPv4();
 
-    const auto lenOrError = comm_udp_recvfrom(sock, &wccp2_i_see_you, WCCP_RESPONSE_SIZE, 0, from_tmp);
+    const auto lenOrError = comm_udp_recvfrom(sock, &wccp2_i_see_you, sizeof(wccp2_i_see_you), 0, from_tmp);
 
     if (lenOrError < 0)
         return;
@@ -1287,6 +1287,8 @@ wccp2HandleUdp(int sock, void *)
                 Must3(!router_view_header, "duplicate router_view definition", Here());
                 SetField(router_view_header, itemHeader, itemHeader, itemSize,
                          "router_view definition truncated");
+                CheckFieldDataLength(&router_view_header->header, ntohs(router_view_header->header.length),
+                                     itemHeader, itemSize, "router_view payload truncated");
                 break;
 
             case WCCP2_CAPABILITY_INFO: {
