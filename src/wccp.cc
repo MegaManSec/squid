@@ -203,17 +203,18 @@ wccpHandleUdp(int sock, void *)
                             sizeof(wccp_i_see_you),
                             0,
                             from);
-    debugs(80, 3, "wccpHandleUdp: " << len << " bytes WCCP pkt from " << from <<
-           ": type=" <<
-           (unsigned) ntohl(wccp_i_see_you.type) << ", version=" <<
-           (unsigned) ntohl(wccp_i_see_you.version) << ", change=" <<
-           (unsigned) ntohl(wccp_i_see_you.change) << ", id=" <<
-           (unsigned) ntohl(wccp_i_see_you.id) << ", number=" <<
-           (unsigned) ntohl(wccp_i_see_you.number));
-
     if (len < 0)
         return;
 
+    const size_t hdrLen =
+        static_cast<size_t>(
+            reinterpret_cast<const char*>(&wccp_i_see_you.wccp_cache_entry) -
+            reinterpret_cast<const char*>(&wccp_i_see_you));
+
+    if ((size_t)len < hdrLen)
+        return;
+
+    // Basic source/version/type checks
     if (from != Config.Wccp.router)
         return;
 
@@ -230,6 +231,17 @@ wccpHandleUdp(int sock, void *)
 
         return;
     }
+
+    if ((size_t)len < hdrLen + ntohl(wccp_i_see_you.number) * sizeof(struct wccp_cache_entry_t))
+        return;
+
+    debugs(80, 3, "wccpHandleUdp: " << len << " bytes WCCP pkt from " << from <<
+           ": type=" <<
+           (unsigned) ntohl(wccp_i_see_you.type) << ", version=" <<
+           (unsigned) ntohl(wccp_i_see_you.version) << ", change=" <<
+           (unsigned) ntohl(wccp_i_see_you.change) << ", id=" <<
+           (unsigned) ntohl(wccp_i_see_you.id) << ", number=" <<
+           (unsigned) ntohl(wccp_i_see_you.number));
 
     last_id = wccp_i_see_you.id;
 
