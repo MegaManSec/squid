@@ -273,16 +273,35 @@ peerDigestRequest(PeerDigest * pd)
     /* the rest is based on clientReplyContext::processExpired() */
     req->flags.refresh = true;
 
-    old_e = fetch->old_entry = storeGetPublicByRequest(req);
-
-    // XXX: Missing a hittingRequiresCollapsing() && startCollapsingOn() check.
+    old_e = storeGetPublicByRequest(req);
     if (old_e) {
         debugs(72, 5, "found old " << *old_e);
 
         old_e->lock("peerDigestRequest");
         old_e->ensureMemObject(url, url, req->method);
 
-        fetch->old_sc = storeClientListAdd(old_e, fetch);
+        store_client *sc = storeClientListAdd(old_e, fetch);
+
+        // Collapse onto an in-flight digest fetch if possible.
+        if (old_e->hittingRequiresCollapsing() &&
+            fetch->startCollapsingOn(*old_e, false)) {
+
+            debugs(72, 5, "peerDigestRequest: collapsing onto existing fetch for " << url);
+
+
+            fetch->entry = old_e;
+            fetch->sc = sc;
+
+            StoreIOBuffer b(SM_PAGE_SIZE, 0, fetch->buf);
+            storeClientCopy(fetch->sc, fetch->entry, b, peerDigestHandleReply, fetch);
+
+            safe_free(url);
+            return;
+        }
+
+        // Not collapsed: keep old entry for IMS bookkeeping below.
+        fetch->old_entry = old_e;
+        fetch->old_sc = sc;
     }
 
     e = fetch->entry = storeCreateEntry(url, url, req->flags, req->method);
