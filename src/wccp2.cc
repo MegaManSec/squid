@@ -1678,7 +1678,7 @@ wccp2AssignBuckets(void *)
 
     struct wccp2_cache_list_t *cache_list_ptr;
     char wccp_packet[WCCP_RESPONSE_SIZE];
-    auto offset, saved_offset, assignment_offset, alt_assignment_offset;
+    auto offset = 0, saved_offset = 0, assignment_offset = 0, alt_assignment_offset = 0;
 
     struct sockaddr_in router;
     int router_len;
@@ -1711,15 +1711,10 @@ wccp2AssignBuckets(void *)
     int valuecounter, value;
     char *buckets;
 
-    assignment_offset = alt_assignment_offset = 0;
-
     router_len = sizeof(router);
     memset(&router, '\0', router_len);
     router.sin_family = AF_INET;
     router.sin_port = htons(WCCP_PORT);
-
-    /* Start main header - fill in length later */
-    offset = 0;
 
     main_header = (struct wccp2_message_header_t *) &wccp_packet[offset];
     main_header->type = htonl(WCCP2_REDIRECT_ASSIGN);
