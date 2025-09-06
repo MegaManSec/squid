@@ -1736,7 +1736,7 @@ idnsSendSlaveAAAAQuery(idns_query *master)
 
     debugs(78, 3, "buf is " << q->sz << " bytes for " << q->name <<
            ", id = 0x" << asHex(q->query_id));
-    if (!q->sz) {
+    if (q->sz <= 0) {
         delete q;
         return;
     }
