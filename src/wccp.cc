@@ -137,10 +137,6 @@ wccpConnectionOpen(void)
     if (theWccpConnection < 0)
         fatal("Cannot open WCCP Port");
 
-    Comm::SetSelect(theWccpConnection, COMM_SELECT_READ, wccpHandleUdp, nullptr, 0);
-
-    debugs(80, DBG_IMPORTANT, "Accepting WCCPv1 messages on " << Config.Wccp.address << ", FD " << theWccpConnection << ".");
-
     // Sadly WCCP only does IPv4
 
     struct sockaddr_in router;
@@ -155,6 +151,9 @@ wccpConnectionOpen(void)
         fatal("Unable to getsockname on WCCP out socket");
 
     local_ip = local;
+
+    Comm::SetSelect(theWccpConnection, COMM_SELECT_READ, wccpHandleUdp, nullptr, 0);
+    debugs(80, DBG_IMPORTANT, "Accepting WCCPv1 messages on " << Config.Wccp.address << ", FD " << theWccpConnection << ".");
 }
 
 static void
