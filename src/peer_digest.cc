@@ -294,8 +294,8 @@ peerDigestRequest(PeerDigest * pd)
     // TODO: Also check for fetch->pd->cd presence as a precondition for sending
     // IMS requests because peerDigestFetchReply() does not accept 304 responses
     // without an in-memory cache digest.
-    if (old_e)
-        e->lastModified(old_e->lastModified());
+    if (old_e && pd->cd) {
+        e->lastModified(old_e->lastModified()); // only send IMS if we can keep using the in-mem digest
 
     /* push towards peer cache */
     FwdState::fwdStart(Comm::ConnectionPointer(), e, req);
