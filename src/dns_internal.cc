@@ -1849,6 +1849,11 @@ idnsPTRLookup(const Ip::Address &addr, IDNSCB * callback, void *data)
         return;
     }
 
+    // Ensure the collapse key used for hash insert matches the one used for lookup
+    // and remains stable across retries.
+    strncpy(q->orig, q->query.name, sizeof(q->orig) - 1);
+    q->orig[sizeof(q->orig) - 1] = '\0';
+
     if (idnsCachedLookup(q->query.name, callback, data)) {
         delete q;
         return;
