@@ -1677,7 +1677,7 @@ wccp2AssignBuckets(void *)
 
     struct wccp2_cache_list_t *cache_list_ptr;
     char wccp_packet[WCCP_RESPONSE_SIZE];
-    short int offset, saved_offset, assignment_offset, alt_assignment_offset;
+    auto offset, saved_offset, assignment_offset, alt_assignment_offset;
 
     struct sockaddr_in router;
     int router_len;
