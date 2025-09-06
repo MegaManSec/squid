@@ -263,20 +263,27 @@ wccpHandleUdp(int sock, void *)
 static int
 wccpLowestIP(void)
 {
-    unsigned int loop;
-    int found = 0;
-
     /*
      * We sanity checked wccp_i_see_you.number back in wccpHandleUdp()
      */
 
-    for (loop = 0; loop < (unsigned) ntohl(wccp_i_see_you.number); ++loop) {
-        assert(loop < WCCP_ACTIVE_CACHES);
+    struct in_addr local4;
+    memset(&local4, 0, sizeof(local4));
+    local_ip.getInAddr(local4);
+    const auto localHost = ntohl(local4.s_addr);
 
-        if (local_ip > wccp_i_see_you.wccp_cache_entry[loop].ip_addr)
+    const auto n = ntohl(wccp_i_see_you.number);
+    assert(n <= WCCP_ACTIVE_CACHES);
+
+    unsigned int loop;
+    int found = 0;
+    for (loop = 0; loop < n; ++loop) {
+        const auto entryHost = ntohl(wccp_i_see_you.wccp_cache_entry[loop].ip_addr.s_addr);
+
+        if (localHost > entryHost)
             return 0;
 
-        if (local_ip == wccp_i_see_you.wccp_cache_entry[loop].ip_addr)
+        if (localHost == entryHost)
             found = 1;
     }
 
