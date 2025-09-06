@@ -343,8 +343,11 @@ ipcCreate(int type, const char *prog, const char *const args[], const char *name
         xclose(crfd);
         cwfd = crfd = fd;
     } else if (type == IPC_UDP_SOCKET) {
-        if (comm_connect_addr(crfd, PaS) == Comm::COMM_ERROR)
-            return ipcCloseAllFD(prfd, pwfd, crfd, cwfd);
+        if (comm_connect_addr(crfd, PaS) == Comm::COMM_ERROR) {
+            int saved = errno;
+            debugs(54, DBG_CRITICAL, "ipcCreate: FD " << crfd << " comm_connect_addr: " << PaS << ": " << xstrerr(saved));
+            _exit(1);
+        }
     }
 
     if (type == IPC_UDP_SOCKET) {
