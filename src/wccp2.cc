@@ -1909,7 +1909,6 @@ wccp2AssignBuckets(void *)
                 }
 
                 offset += (WCCP_BUCKETS * sizeof(char));
-                safe_free(weight);
                 break;
 
             case WCCP2_ASSIGNMENT_METHOD_MASK:
