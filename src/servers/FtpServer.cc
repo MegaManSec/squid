@@ -366,7 +366,7 @@ Ftp::Server::calcUri(const SBuf *file)
 
 /// Starts waiting for a data connection. Returns listening port.
 /// On errors, responds with an error and returns zero.
-unsigned int
+const unsigned short
 Ftp::Server::listenForDataConnection()
 {
     closeDataConnection();
@@ -392,7 +392,7 @@ Ftp::Server::listenForDataConnection()
     dataListenConn = conn;
     AsyncJob::Start(new Comm::TcpAcceptor(conn, note, sub));
 
-    const unsigned int listeningPort = comm_local_port(conn->fd);
+    const auto listeningPort = comm_local_port(conn->fd);
     conn->local.port(listeningPort);
     return listeningPort;
 }
@@ -888,7 +888,7 @@ Ftp::Server::handlePasvReply(const HttpReply *reply, StoreIOBuffer)
         return;
     }
 
-    const unsigned short localPort = listenForDataConnection();
+    const auto localPort = listenForDataConnection();
     if (!localPort)
         return;
 
@@ -1076,7 +1076,7 @@ Ftp::Server::handleEpsvReply(const HttpReply *reply, StoreIOBuffer)
         return;
     }
 
-    const unsigned short localPort = listenForDataConnection();
+    const auto localPort = listenForDataConnection();
     if (!localPort)
         return;
 
