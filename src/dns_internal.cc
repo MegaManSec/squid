@@ -929,6 +929,11 @@ idnsSendQueryVC(idns_query * q, size_t nsn)
     if (vc->queue->isNull())
         vc->queue->init();
 
+    if (q->sz < 0 || q->sz > 65535) {
+        debugs(78, DBG_IMPORTANT, "ERROR: Invalid DNS query size: " << q->sz);
+        return;
+    }
+
     const auto serialiedQuerySize = 2 + q->sz + 1; // payload_length + payload + terminate()
     if (vc->queue->potentialSpaceSize() < serialiedQuerySize) {
         // header + payload + MemBuf terminator exceed maximum space size
