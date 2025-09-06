@@ -179,6 +179,7 @@ public:
     Comm::ConnectionPointer conn;
     unsigned short msglen = 0;
     int read_msglen = 0;
+    size_t body_read = 0;
     MemBuf *msg = nullptr;
     MemBuf *queue = nullptr;
     bool busy = true;
@@ -789,7 +790,12 @@ idnsTickleQueue(void)
 static void
 idnsSentQueryVC(const Comm::ConnectionPointer &conn, char *, size_t size, Comm::Flag flag, int, void *data)
 {
-    nsvc * vc = (nsvc *)data;
+    nsvc * vc = static_cast<nsvc *>(data);
+    if (!vc) {
+        if (Comm::IsConnOpen(conn))
+            conn->close();
+        return;
+    }
 
     if (flag == Comm::ERR_CLOSING)
         return;
@@ -845,6 +851,12 @@ idnsInitVCConnected(const Comm::ConnectionPointer &conn, Comm::Flag status, int,
 {
     nsvc * vc = (nsvc *)data;
 
+    if (!vc) {
+        if (Comm::IsConnOpen(conn))
+            conn->close();
+        return;
+    }
+
     if (status != Comm::OK || !conn) {
         char buf[MAX_IPSTRLEN] = "";
         if (vc->ns < nameservers.size())
@@ -868,6 +880,10 @@ static void
 idnsVCClosed(const CommCloseCbParams &params)
 {
     nsvc * vc = (nsvc *)params.data;
+
+    if (!vc)
+        return;
+
     if (vc->conn) {
         vc->conn->noteClosure();
         vc->conn = nullptr;
@@ -1475,6 +1491,12 @@ idnsReadVC(const Comm::ConnectionPointer &conn, char *buf, size_t len, Comm::Fla
 {
     nsvc * vc = (nsvc *)data;
 
+    if (!vc) {
+        if (Comm::IsConnOpen(conn))
+            conn->close();
+        return;
+    }
+
     if (flag == Comm::ERR_CLOSING)
         return;
 
@@ -1484,20 +1506,33 @@ idnsReadVC(const Comm::ConnectionPointer &conn, char *buf, size_t len, Comm::Fla
         return;
     }
 
-    vc->msg->size += len;       // XXX should not access -> size directly
+    // should not happen
+    if (vc->body_read + len > vc->msglen) {
+        if (Comm::IsConnOpen(conn))
+            conn->close();
+        return;
+    }
+    vc->body_read += len;
 
-    if (vc->msg->contentSize() < vc->msglen) {
+    if (vc->body_read < vc->msglen) {
         AsyncCall::Pointer call = commCbCall(5,4, "idnsReadVC",
                                              CommIoCbPtrFun(idnsReadVC, vc));
-        comm_read(conn, buf+len, vc->msglen - vc->msg->contentSize(), call);
+        comm_read(conn, vc->msg->buf + vc->body_read, vc->msglen - vc->body_read, call);
         return;
     }
 
-    assert(vc->ns < nameservers.size());
-    debugs(78, 3, conn << ": received " << vc->msg->contentSize() << " bytes via TCP from " << nameservers[vc->ns].S << ".");
+    vc->msg->size = vc->body_read;
 
-    idnsGrokReply(vc->msg->buf, vc->msg->contentSize(), vc->ns);
+    if (vc->ns >= nameservers.size()) {
+        if (Comm::IsConnOpen(conn))
+            conn->close();
+        return;
+    }
+    debugs(78, 3, conn << ": received " << vc->body_read << " bytes via TCP from " << nameservers[vc->ns].S << ".");
+
+    idnsGrokReply(vc->msg->buf, vc->body_read, vc->ns);
     vc->msg->clean();
+    vc->body_read = 0;
     AsyncCall::Pointer call = commCbCall(5,4, "idnsReadVCHeader",
                                          CommIoCbPtrFun(idnsReadVCHeader, vc));
     comm_read(conn, (char *)&vc->msglen, 2, call);
@@ -1507,6 +1542,12 @@ static void
 idnsReadVCHeader(const Comm::ConnectionPointer &conn, char *buf, size_t len, Comm::Flag flag, int, void *data)
 {
     nsvc * vc = (nsvc *)data;
+
+    if (!vc) {
+        if (Comm::IsConnOpen(conn))
+            conn->close();
+        return;
+    }
 
     if (flag == Comm::ERR_CLOSING)
         return;
@@ -1529,6 +1570,7 @@ idnsReadVCHeader(const Comm::ConnectionPointer &conn, char *buf, size_t len, Com
     }
 
     vc->read_msglen = 0;
+    vc->body_read = 0;
 
     vc->msglen = ntohs(vc->msglen);
 
