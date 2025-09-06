@@ -724,11 +724,13 @@ static void
 clientRedirectAccessCheckDone(Acl::Answer answer, void *data)
 {
     ClientRequestContext *context = (ClientRequestContext *)data;
-    ClientHttpRequest *http = context->http;
+    if (!context->httpStateIsValid())
+        return;
 
-    if (answer.allowed())
+    if (answer.allowed()) {
+        ClientHttpRequest *http = context->http;
         redirectStart(http, clientRedirectDoneWrapper, context);
-    else {
+    } else {
         Helper::Reply const nilReply(Helper::Error);
         context->clientRedirectDone(nilReply);
     }
@@ -754,11 +756,13 @@ static void
 clientStoreIdAccessCheckDone(Acl::Answer answer, void *data)
 {
     ClientRequestContext *context = static_cast<ClientRequestContext *>(data);
-    ClientHttpRequest *http = context->http;
+    if (!context->httpStateIsValid())
+        return;
 
-    if (answer.allowed())
+    if (answer.allowed()) {
+        ClientHttpRequest *http = context->http;
         storeIdStart(http, clientStoreIdDoneWrapper, context);
-    else {
+    } else {
         debugs(85, 3, "access denied expected ERR reply handling: " << answer);
         Helper::Reply const nilReply(Helper::Error);
         context->clientStoreIdDone(nilReply);
