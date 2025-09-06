@@ -717,7 +717,7 @@ wccp2Init(void)
         }
 
         wccp2_here_i_am_header.length += ntohs(wccp2_security_md5.security_length) + 4;
-        assert(wccp2_here_i_am_header.length <= WCCP_RESPONSE_SIZE);
+        assert(wccp2_here_i_am_header.length + sizeof(wccp2_here_i_am_header) <= WCCP_RESPONSE_SIZE);
         wccp2_security_md5.security_type = htons(WCCP2_SECURITY_INFO);
 
         service_list_ptr->security_info = (struct wccp2_security_md5_t *) ptr;
@@ -735,7 +735,7 @@ wccp2Init(void)
 
         wccp2_here_i_am_header.length += sizeof(struct wccp2_service_info_t);
 
-        assert(wccp2_here_i_am_header.length <= WCCP_RESPONSE_SIZE);
+        assert(wccp2_here_i_am_header.length + sizeof(wccp2_here_i_am_header) <= WCCP_RESPONSE_SIZE);
 
         memcpy(ptr, &service_list_ptr->info, sizeof(struct wccp2_service_info_t));
 
@@ -750,7 +750,7 @@ wccp2Init(void)
         case WCCP2_ASSIGNMENT_METHOD_HASH:
 
             wccp2_here_i_am_header.length += sizeof(struct wccp2_identity_info_t);
-            assert(wccp2_here_i_am_header.length <= WCCP_RESPONSE_SIZE);
+            assert(wccp2_here_i_am_header.length + sizeof(wccp2_here_i_am_header) <= WCCP_RESPONSE_SIZE);
             wccp2_identity_info.cache_identity_type = htons(WCCP2_WC_ID_INFO);
             wccp2_identity_info.cache_identity_length = htons(sizeof(wccp2_identity_info.cache_identity));
             memset(&wccp2_identity_info.cache_identity.addr, '\0', sizeof(struct in_addr));
@@ -769,7 +769,7 @@ wccp2Init(void)
         case WCCP2_ASSIGNMENT_METHOD_MASK:
 
             wccp2_here_i_am_header.length += sizeof(struct wccp2_mask_identity_info_t);
-            assert(wccp2_here_i_am_header.length <= WCCP_RESPONSE_SIZE);
+            assert(wccp2_here_i_am_header.length + sizeof(wccp2_here_i_am_header) <= WCCP_RESPONSE_SIZE);
             wccp2_mask_identity_info.cache_identity_type = htons(WCCP2_WC_ID_INFO);
             wccp2_mask_identity_info.cache_identity_length = htons(sizeof(wccp2_mask_identity_info.cache_identity));
             memset(&wccp2_mask_identity_info.cache_identity.addr, '\0', sizeof(struct in_addr));
@@ -807,7 +807,7 @@ wccp2Init(void)
         /* Add the cache view section */
         wccp2_here_i_am_header.length += sizeof(wccp2_cache_view_header);
 
-        assert(wccp2_here_i_am_header.length <= WCCP_RESPONSE_SIZE);
+        assert(wccp2_here_i_am_header.length + sizeof(wccp2_here_i_am_header) <= WCCP_RESPONSE_SIZE);
 
         wccp2_cache_view_header.cache_view_type = htons(WCCP2_WC_VIEW_INFO);
 
@@ -823,7 +823,7 @@ wccp2Init(void)
         /* Add the number of routers to the packet */
         wccp2_here_i_am_header.length += sizeof(service_list_ptr->num_routers);
 
-        assert(wccp2_here_i_am_header.length <= WCCP_RESPONSE_SIZE);
+        assert(wccp2_here_i_am_header.length + sizeof(wccp2_here_i_am_header) <= WCCP_RESPONSE_SIZE);
 
         service_list_ptr->num_routers = htonl(wccp2_numrouters);
 
@@ -836,7 +836,7 @@ wccp2Init(void)
             if (!s->s.isAnyAddr()) {
 
                 wccp2_here_i_am_header.length += sizeof(struct wccp2_router_id_element_t);
-                assert(wccp2_here_i_am_header.length <= WCCP_RESPONSE_SIZE);
+                assert(wccp2_here_i_am_header.length + sizeof(wccp2_here_i_am_header) <= WCCP_RESPONSE_SIZE);
 
                 /* Add a pointer to the router list for this router */
 
@@ -863,7 +863,7 @@ wccp2Init(void)
         /* Add the number of caches (0) */
         wccp2_here_i_am_header.length += sizeof(wccp2_cache_view_info.num_caches);
 
-        assert(wccp2_here_i_am_header.length <= WCCP_RESPONSE_SIZE);
+        assert(wccp2_here_i_am_header.length + sizeof(wccp2_here_i_am_header) <= WCCP_RESPONSE_SIZE);
 
         wccp2_cache_view_info.num_caches = htonl(0);
 
@@ -874,7 +874,7 @@ wccp2Init(void)
         /* Add the extra capability header */
         wccp2_here_i_am_header.length += sizeof(wccp2_capability_info_header);
 
-        assert(wccp2_here_i_am_header.length <= WCCP_RESPONSE_SIZE);
+        assert(wccp2_here_i_am_header.length + sizeof(wccp2_here_i_am_header) <= WCCP_RESPONSE_SIZE);
 
         wccp2_capability_info_header.capability_info_type = htons(WCCP2_CAPABILITY_INFO);
 
@@ -887,7 +887,7 @@ wccp2Init(void)
         /* Add the forwarding method */
         wccp2_here_i_am_header.length += sizeof(wccp2_capability_element);
 
-        assert(wccp2_here_i_am_header.length <= WCCP_RESPONSE_SIZE);
+        assert(wccp2_here_i_am_header.length + sizeof(wccp2_here_i_am_header) <= WCCP_RESPONSE_SIZE);
 
         wccp2_capability_element.capability_type = htons(WCCP2_CAPABILITY_FORWARDING_METHOD);
 
@@ -902,7 +902,7 @@ wccp2Init(void)
         /* Add the assignment method */
         wccp2_here_i_am_header.length += sizeof(wccp2_capability_element);
 
-        assert(wccp2_here_i_am_header.length <= WCCP_RESPONSE_SIZE);
+        assert(wccp2_here_i_am_header.length + sizeof(wccp2_here_i_am_header) <= WCCP_RESPONSE_SIZE);
 
         wccp2_capability_element.capability_type = htons(WCCP2_CAPABILITY_ASSIGNMENT_METHOD);
 
@@ -917,7 +917,7 @@ wccp2Init(void)
         /* Add the return method */
         wccp2_here_i_am_header.length += sizeof(wccp2_capability_element);
 
-        assert(wccp2_here_i_am_header.length <= WCCP_RESPONSE_SIZE);
+        assert(wccp2_here_i_am_header.length + sizeof(wccp2_here_i_am_header) <= WCCP_RESPONSE_SIZE);
 
         wccp2_capability_element.capability_type = htons(WCCP2_CAPABILITY_RETURN_METHOD);
 
@@ -930,6 +930,7 @@ wccp2Init(void)
         ptr += sizeof(wccp2_capability_element);
 
         /* Finally, fix the total length to network order, and copy to the appropriate memory blob */
+        assert(wccp2_here_i_am_header.length + sizeof(wccp2_here_i_am_header) <= WCCP_RESPONSE_SIZE);
         wccp2_here_i_am_header.length = htons(wccp2_here_i_am_header.length);
 
         memcpy(&service_list_ptr->wccp_packet, &wccp2_here_i_am_header, sizeof(wccp2_here_i_am_header));
