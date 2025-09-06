@@ -985,10 +985,20 @@ idnsSendQuery(idns_query * q)
 
     do {
         // only use mDNS resolvers for mDNS compatible queries
-        if (!q->permit_mdns)
-            nsn = nns_mdns_count + q->nsends % (nsCount - nns_mdns_count);
-        else
+        if (!q->permit_mdns) {
+            const auto eligible = nsCount - nns_mdns_count;
+            if (eligible == 0) {
+                debugs(78, DBG_IMPORTANT, "ERROR: No eligible unicast nameservers for query " << q->name);
+                return;
+            }
+            nsn = nns_mdns_count + (q->nsends % eligible);
+        } else {
+            if (nsCount == 0) {
+                debugs(78, DBG_IMPORTANT, "ERROR: No nameservers available for query " << q->name);
+                return;
+            }
             nsn = q->nsends % nsCount;
+        }
 
         if (q->need_vc) {
             idnsSendQueryVC(q, nsn);
