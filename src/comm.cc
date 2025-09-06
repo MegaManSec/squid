@@ -664,6 +664,10 @@ comm_connect_addr(int sock, const Ip::Address &address)
     }
 
     address.getAddrInfo(AI, F->sock_family);
+    if (!AI) {
+        errno = EADDRNOTAVAIL;
+        return Comm::COMM_ERROR;
+    }
 
     /* Establish connection. */
     int xerrno = 0;
@@ -699,6 +703,8 @@ comm_connect_addr(int sock, const Ip::Address &address)
         x = xgetsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &errlen);
         if (x == 0)
             xerrno = err;
+        else
+            xerrno = errno;
 
 #if _SQUID_SOLARIS_
         /*
@@ -709,22 +715,22 @@ comm_connect_addr(int sock, const Ip::Address &address)
         */
         if (x < 0 && xerrno == EPIPE)
             xerrno = ENOTCONN;
-        else
-            xerrno = errno;
 #endif
     }
 
     Ip::Address::FreeAddr(AI);
 
-    errno = xerrno;
     if (xerrno == 0 || xerrno == EISCONN)
         status = Comm::OK;
     else if (ignoreErrno(xerrno))
         status = Comm::INPROGRESS;
-    else if (xerrno == EAFNOSUPPORT || xerrno == EINVAL)
+    else if (xerrno == EAFNOSUPPORT || xerrno == EINVAL) {
+        errno = xerrno;
         return Comm::ERR_PROTOCOL;
-    else
+    } else {
+        errno = xerrno;
         return Comm::COMM_ERROR;
+    }
 
     address.toStr(F->ipaddr, MAX_IPSTRLEN);
 
@@ -737,6 +743,10 @@ comm_connect_addr(int sock, const Ip::Address &address)
     }
 
     errno = xerrno;
+    if (status == Comm::OK)
+        errno = 0;
+    else
+        errno = xerrno;
     return status;
 }
 
