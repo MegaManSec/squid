@@ -994,9 +994,6 @@ wccp2ConnectionOpen(void)
     }
 
 #endif
-    Comm::SetSelect(theWccp2Connection, COMM_SELECT_READ, wccp2HandleUdp, nullptr, 0);
-
-    debugs(80, DBG_IMPORTANT, "Accepting WCCPv2 messages on port " << WCCP_PORT << ", FD " << theWccp2Connection << ".");
     debugs(80, DBG_IMPORTANT, "Initialising all WCCPv2 lists");
 
     /* Initialise all routers on all services */
@@ -1038,6 +1035,9 @@ wccp2ConnectionOpen(void)
     }
 
     wccp2_connected = 1;
+
+    Comm::SetSelect(theWccp2Connection, COMM_SELECT_READ, wccp2HandleUdp, nullptr, 0);
+    debugs(80, DBG_IMPORTANT, "Accepting WCCPv2 messages on port " << WCCP_PORT << ", FD " << theWccp2Connection << ".");
 }
 
 static void
