@@ -1331,20 +1331,9 @@ idnsRead(int fd, void *)
     // attacks on the DNS client.
     Comm::SetSelect(fd, COMM_SELECT_READ, idnsRead, nullptr, 0);
 
-    /* BUG (UNRESOLVED)
-     *  two code lines after returning from comm_udprecvfrom()
-     *  something overwrites the memory behind the from parameter.
-     *  NO matter where in the stack declaration list above it is placed
-     *  The cause of this is still unknown, however copying the data appears
-     *  to allow it to be passed further without this erasure.
-     */
-    Ip::Address bugbypass;
-
     while (max) {
         --max;
-        len = comm_udp_recvfrom(fd, rbuf, SQUID_UDP_SO_RCVBUF, 0, bugbypass);
-
-        from = bugbypass; // BUG BYPASS. see notes above.
+        len = comm_udp_recvfrom(fd, rbuf, SQUID_UDP_SO_RCVBUF, 0, from);
 
         if (len == 0)
             break;
@@ -1373,7 +1362,6 @@ idnsRead(int fd, void *)
 
         debugs(78, 3, "idnsRead: FD " << fd << ": received " << len << " bytes from " << from);
 
-        /* BUG: see above. Its here that it becomes apparent that the content of bugbypass is gone. */
         int nsn = idnsFromKnownNameserver(from);
 
         if (nsn >= 0) {

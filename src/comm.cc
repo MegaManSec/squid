@@ -128,12 +128,15 @@ int
 comm_udp_recvfrom(int fd, void *buf, size_t len, int flags, Ip::Address &from)
 {
     ++ statCounter.syscalls.sock.recvfroms;
+
+    struct sockaddr_storage ss = {};
+    socklen_t sslen = sizeof(ss);
+
+    int x = xrecvfrom(fd, buf, len, flags, reinterpret_cast<struct sockaddr*>(&ss), &sslen);
+    if (x >= 0)
+        from = ss;
+
     debugs(5,8, "comm_udp_recvfrom: FD " << fd << " from " << from);
-    struct addrinfo *AI = nullptr;
-    Ip::Address::InitAddr(AI);
-    int x = xrecvfrom(fd, buf, len, flags, AI->ai_addr, &AI->ai_addrlen);
-    from = *AI;
-    Ip::Address::FreeAddr(AI);
     return x;
 }
 
