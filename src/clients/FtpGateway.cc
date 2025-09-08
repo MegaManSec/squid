@@ -1906,15 +1906,21 @@ Ftp::Gateway::ftpAcceptDataConnection(const CommAcceptCbParams &io)
         return;
     }
 
-    /* data listening conn is no longer even open. abort. */
+    // Sanity: the data listening socket must be open. If not, do not leak the accepted FD.
     if (!Comm::IsConnOpen(data.listenConn)) {
-        data.listenConn = nullptr; // ensure that it's cleared and not just closed.
+        debugs(9, DBG_IMPORTANT, "WARNING: data listening channel closed");
+        data.clear();
+        if (Comm::IsConnOpen(io.conn))
+            io.conn->close(); // avoid FD leak on early return
         return;
     }
 
-    /* data listening conn is no longer even open. abort. */
-    if (!Comm::IsConnOpen(data.conn)) {
-        data.clear(); // ensure that it's cleared and not just closed.
+    // If we already have an adopted data connection, reject this unexpected accept
+    // and close the just-accepted socket to avoid leaking FDs.
+    if (Comm::IsConnOpen(data.conn)) {
+        debugs(9, DBG_IMPORTANT, "WARNING: already have data.conn; closing unexpected accepted socket");
+        if (Comm::IsConnOpen(io.conn))
+            io.conn->close();
         return;
     }
 
