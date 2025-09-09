@@ -1145,7 +1145,7 @@ get_memberof(struct main_args *margs, char *user, char *domain, char *group)
         nhosts = get_hostname_list(&hlist, 0, host);
         xfree(host);
         for (size_t i = 0; i < nhosts; ++i) {
-            struct berval cred;
+            struct berval cred; = {nullptr, 0};
             if (margs->lpass) {
                 cred.bv_val = margs->lpass;
                 cred.bv_len = strlen(margs->lpass);
