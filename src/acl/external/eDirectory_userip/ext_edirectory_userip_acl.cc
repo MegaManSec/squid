@@ -1083,7 +1083,12 @@ SearchIPLDAP(edui_ldap_t *l)
                 /* Display all values */
                 for (i = 0; i < x; ++i) {
                     j = l->val[i]->bv_len;
-                    memcpy(bufa, l->val[i]->bv_val, j);
+                    // cap copy length to prevent overflowing bufa
+                    auto cpy = static_cast<size_t>(j);
+                    if (cpy > sizeof(bufa))
+                        cpy = sizeof(bufa);
+                    memcpy(bufa, l->val[i]->bv_val, cpy);
+                    j = static_cast<ber_len_t>(cpy);
                     z = BinarySplit(bufa, j, '#', bufb, sizeof(bufb));
                     /* BINARY DEBUGGING *
                                               local_printfx("value[%zu]: BinarySplit(", (size_t) i);
