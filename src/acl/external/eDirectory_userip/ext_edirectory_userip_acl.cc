@@ -319,7 +319,7 @@ BinarySplit(void *In_Obj, size_t In_Sz, char chr, void *Out_Obj, size_t Out_Sz)
 
     // find the char delimiter position...
     char *p = static_cast<char*>(In_Obj);
-    while (*p != chr && (in+In_Sz) > p) {
+    while (p < (in + In_Sz) && *p != chr) {
         ++p;
     }
 
@@ -335,7 +335,7 @@ BinarySplit(void *In_Obj, size_t In_Sz, char chr, void *Out_Obj, size_t Out_Sz)
     memcpy(Out_Obj, In_Obj, i);
 
     // omit the delimiter
-    if (*p == chr) {
+    if (p < (in + In_Sz) && *p == chr) {
         ++p;
         ++i;
     } else {
