@@ -274,7 +274,7 @@ authenticate(int socket_fd, const char *username, const char *passwd)
     unsigned short total_length;
     u_char *ptr;
     int length;
-    char passbuf[MAXPASS];
+    char passbuf[MAXPASS + AUTH_VECTOR_LEN];
     u_char md5buf[256];
     int secretlen;
     u_char cbc[AUTH_VECTOR_LEN];
@@ -318,7 +318,7 @@ authenticate(int socket_fd, const char *username, const char *passwd)
     if (length > MAXPASS) {
         length = MAXPASS;
     }
-    memset(passbuf, 0, MAXPASS);
+    memset(passbuf, 0, sizeof(passbuf));
     memcpy(passbuf, passwd, length);
 
     /*
@@ -326,7 +326,11 @@ authenticate(int socket_fd, const char *username, const char *passwd)
      * and the password is encoded in blocks of 16
      * with cipher block chaining
      */
-    length = ((length / AUTH_VECTOR_LEN) + 1) * AUTH_VECTOR_LEN;
+    /* round up, but never beyond our buffer; handle exact multiples correctly */
+    length = ((length + AUTH_VECTOR_LEN - 1) / AUTH_VECTOR_LEN) * AUTH_VECTOR_LEN;
+    if (length > (int)sizeof(passbuf)) {
+        length = (int)((sizeof(passbuf) / AUTH_VECTOR_LEN) * AUTH_VECTOR_LEN);
+    }
 
     *ptr = PW_PASSWORD;
     ++ptr;
