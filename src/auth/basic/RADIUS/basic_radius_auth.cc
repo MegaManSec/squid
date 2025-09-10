@@ -89,10 +89,13 @@
 #define MAXPASS     254
 #define MAXLINE     254
 
+/* RFC 2865: RADIUS packets are at most 4096 octets */
+#define RADIUS_MAX_PACKET_LEN 4096
+
 static void md5_calc(uint8_t out[16], void *in, size_t len);
 
-static int i_send_buffer[2048];
-static int i_recv_buffer[2048];
+static int i_send_buffer[RADIUS_MAX_PACKET_LEN];
+static int i_recv_buffer[RADIUS_MAX_PACKET_LEN];
 static char *send_buffer = (char *) i_send_buffer;
 static char *recv_buffer = (char *) i_recv_buffer;
 static int sockfd;
@@ -171,6 +174,18 @@ result_recv(char *buffer, int length)
         debug("Received invalid reply length from server (want %d/ got %d)\n", totallen, length);
         return -1;
     }
+
+    /* Basic structural/range checks before touching the buffer further */
+    if (length < (int)AUTH_HDR_LEN || length > (int)RADIUS_MAX_PACKET_LEN) {
+        debug("Received reply outside allowed size range (%d)\n", length);
+        return -1;
+    }
+    const auto buffer_cap = sizeof(i_recv_buffer);
+    if ((size_t)length > buffer_cap) {
+        debug("Received reply larger than receive buffer (%zu)\n", buffer_cap);
+        return -1;
+    }
+
     if (auth->id != request_id) {
         /* Duplicate response of an earlier query, ignore */
         return -1;
@@ -179,6 +194,13 @@ result_recv(char *buffer, int length)
     memcpy(reply_digest, auth->vector, AUTH_VECTOR_LEN);
     memcpy(auth->vector, vector, AUTH_VECTOR_LEN);
     secretlen = strlen(secretkey);
+
+    /* Ensure room to append secret without overrunning receive buffer */
+    if (secretlen > buffer_cap - (size_t)length || secretlen >= MAXPASS) {
+        debug("Reply too large to append shared secret safely (len=%d, secret=%zu, cap=%zu)\n",
+              length, secretlen, buffer_cap);
+        return -1;
+    }
     memcpy(buffer + length, secretkey, secretlen);
     md5_calc(calc_digest, (unsigned char *) auth, length + secretlen);
 
