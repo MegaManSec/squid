@@ -804,7 +804,7 @@ get_bin_attributes(LDAP * ld, LDAPMessage * res, const char *attribute,
 LDAP *
 tool_ldap_open(struct main_args * margs, char *host, int port, char *ssl)
 {
-    LDAP *ld;
+    LDAP *ld = nullptr;
 #if HAVE_OPENLDAP
     LDAPURLDesc *url = nullptr;
     char *ldapuri = nullptr;
@@ -864,7 +864,8 @@ tool_ldap_open(struct main_args * margs, char *host, int port, char *ssl)
         error((char *)
               "%s| %s: ERROR: Error while setting default options for ldap server: %s\n",
               LogTime(), PROGRAM, ldap_err2string(rc));
-        ldap_unbind_ext(ld, nullptr, nullptr);
+        if (ld)
+            ldap_unbind_ext(ld, nullptr, nullptr);
         ld = nullptr;
         return nullptr;
     }
